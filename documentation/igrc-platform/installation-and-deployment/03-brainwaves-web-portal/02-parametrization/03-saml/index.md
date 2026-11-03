@@ -149,7 +149,9 @@ SPNEGO=org.apache.catalina.authenticator.SpnegoAuthenticator
 SAML=com.brainwave.tomcat.authenticator.saml.SAMLAuthenticator
 ```
 
-In `<TOMCAT_CONF_FOLDER>`, create `SAMLAuthenticator.properties`. A complete sample is in [Configuration file samples](#configuration-file-samples). Each property, and the version in which it appeared, is described in [SAML Authenticator properties](./saml-authenticators-properties).
+In `<TOMCAT_CONF_FOLDER>` (`$CATALINA_BASE/conf`), create `SAMLAuthenticator.properties`. A complete sample is in [Configuration file samples](#configuration-file-samples). Each property, and the version in which it appeared, is described in [SAML Authenticator properties](./saml-authenticators-properties).
+
+From **3.4.0**, **4.1.0** and **5.1.0**, a bare file name in that properties file (`idp-metadata.xml`, `sp-metadata.xml`, a role-mapping file, a keystore) is read from `$CATALINA_BASE/conf`. An absolute path is used as given. Any other relative path is resolved from `$CATALINA_BASE`.
 
 `SAMLAuthenticator.properties` applies to every web application. Since **3.3.10**, and on **4.x** and **5.x**, a web application can use its own file instead: `SAMLAuthenticator-<context-name>.properties`, where `<context-name>` is the context name. That file can point to its own `sp-metadata.xml`. When the context file is absent, `SAMLAuthenticator.properties` is used.
 
@@ -199,7 +201,7 @@ com.brainwave.tomcat.authenticator.saml.SAMLAuthenticator.level = ALL
 
 ## Configuration file samples
 
-Place these files in `<TOMCAT_CONF_FOLDER>`. Property meanings and the version in which each property appeared are in [SAML Authenticator properties](./saml-authenticators-properties).
+Place these files in `<TOMCAT_CONF_FOLDER>`, which is `$CATALINA_BASE/conf`. From **3.4.0**, **4.1.0** and **5.1.0**, a bare file name is read from that directory. An absolute path, or a path relative to `$CATALINA_BASE`, also works. Property meanings and the version in which each property appeared are in [SAML Authenticator properties](./saml-authenticators-properties). The private keystore must be readable by the Tomcat account and must not be readable by other accounts.
 
 ### SAMLAuthenticator.properties
 

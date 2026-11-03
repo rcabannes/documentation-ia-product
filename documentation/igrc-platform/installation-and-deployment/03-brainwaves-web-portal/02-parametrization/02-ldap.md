@@ -163,7 +163,7 @@ Within the <TOMCAT_CONF_FOLDER>/server.xml file, define a JNDI Realm and a RoleM
 
 After completing the realm configurations, the next step is to create the role mapping file:
 
-- In the `<TOMCAT_CONF_FOLDER>` directory:
+- In the `<TOMCAT_CONF_FOLDER>` directory (`$CATALINA_BASE/conf`):
   - Create a file named `<LDAP_ROLE_MAPPING_FILE>`
   - Populate it based on your context, using the format shown below:
 
@@ -173,6 +173,8 @@ After completing the realm configurations, the next step is to create the role m
     ...
     <LDAP_ROLEn>=<PORTAL_ROLEn>
     ```
+
+From **3.4.0**, **4.1.0** and **5.1.0**, a bare `configurationFile` is read from `$CATALINA_BASE/conf`. An absolute path is used as given. Any other relative path is resolved from `$CATALINA_BASE` and is not prefixed with `conf/` a second time. A value that contains a directory, such as `subdir/roles.properties`, is `$CATALINA_BASE/subdir/roles.properties`.
 
 > Identity Analytics requires at least the user-specific role to be mapped. For details on other default IAP portal roles, see the [Web Portal Roles](https://developer.radiantlogic.com/ia/iap-2.0/identity-analytics/integration-guide/03-webportal-roles/) article.
 
@@ -248,9 +250,9 @@ In <TOMCAT_CONF_FOLDER>/server.xml, define as many JNDI and RoleMapping Realms a
 
 > The **JNDIRealm** must be included within the **CombinedRealm**, which in turn must be included within the **LockoutRealm**. If **RoleMappingRealm** is used, declare those realms outside of the **CombinedRealm**.
 
-After completing the realm configurations, the next step is to create the role mapping file:
+After completing the realm configurations, the next step is to create the role mapping file. Use the same location rule as the single LDAP mapping file: `$CATALINA_BASE/conf` for a bare name.
 
-- In the `<TOMCAT_CONF_FOLDER>` directory:
+- In the `<TOMCAT_CONF_FOLDER>` directory (`$CATALINA_BASE/conf`):
   - Create a file named `<LDAP_ROLE_MAPPING_FILE>`
   - Populate it based on your context, using the format shown below:
 

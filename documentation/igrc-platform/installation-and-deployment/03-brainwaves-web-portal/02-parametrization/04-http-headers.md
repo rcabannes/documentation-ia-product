@@ -28,17 +28,17 @@ These libraries are not available for direct download. Contact Professional Serv
 **4.x (recommended)** — Tomcat 9.0. This valve runs on Java 8, and on Java 17.
 
 - `tomcat-addons-valve-http-authentication-4.x.x.jar`
+- From **4.1.0**, also `tomcat-addons-common-4.x.x.jar`. **4.0.x** did not need it.
 
 **5.x (recommended)** — Tomcat 11.0 (Jakarta). Java 21 or later.
 
 - `tomcat-addons-valve-http-authentication-5.x.x.jar`
+- From **5.1.0**, also `tomcat-addons-common-5.x.x.jar`. **5.0.x** did not need it.
 
 **3.x (not recommended)** — Tomcat 9.0. The valve is inside the single library JAR:
 
 - Java 8: `bw-tomcat-9.0-addons.java1.8-3.x.x.jar`
 - Java 17 or later: `bw-tomcat-9.0-addons.java17-3.x.x.jar`
-
-This valve does not need `tomcat-addons-common`.
 
 Ensure that:
 
@@ -80,7 +80,7 @@ Each `<role>` element is a default role added to every authenticated user. The X
 <SHIBBOLETH_ROLE2>=<PORTAL_ROLE2>
 ```
 
-3. In `<TOMCAT_CONF_FOLDER>/Catalina/localhost/<WEBAPP_NAME>.xml`, declare the valve. `config` is a path relative to the Tomcat `conf` directory.
+3. In `<TOMCAT_CONF_FOLDER>/Catalina/localhost/<WEBAPP_NAME>.xml`, declare the valve. `<TOMCAT_CONF_FOLDER>` is `$CATALINA_BASE/conf`. From **3.4.0**, **4.1.0** and **5.1.0**, a bare `config` such as `http-header-valve.xml` is read from that directory. An absolute path, or a path relative to `$CATALINA_BASE`, also works. Put `http-header-valve.xml` and the role-mapping file there. A bare name is not resolved from the process working directory.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>

@@ -7,13 +7,15 @@ description: "SAML Authenticators properties"
 
 This page describes each property of `SAMLAuthenticator.properties`. The installation procedure, the library names, and a copy of each configuration file are on the [SAML Access](./index.md) page.
 
+From **3.4.0**, **4.1.0** and **5.1.0**, put these files in `$CATALINA_BASE/conf`. That is the general rule. A bare file name (`SAMLAuthenticator.properties`, `idp-metadata.xml`, `sp-metadata.xml`, `rolemapping.properties`, `samlkeystore.p12`) is read from that directory. An absolute path is used as given. Any other relative path is resolved from `$CATALINA_BASE`, not from the process working directory and not from `CATALINA_HOME` when that directory is different.
+
 ## idpMetadata
 
-Pointer to the Identity Provider metadata file, in the Tomcat `conf` directory. Use the file provided by the Identity Provider. An sample is in [Configuration file samples](./index.md#configuration-file-samples).
+Pointer to the Identity Provider metadata file. Put it in `$CATALINA_BASE/conf`. Use the file provided by the Identity Provider. An sample is in [Configuration file samples](./index.md#configuration-file-samples). An absolute path, or a path relative to `$CATALINA_BASE`, also works.
 
 ## spMetadata
 
-Pointer to the Service Provider metadata file, in the Tomcat `conf` directory. The default name is `sp-metadata.xml`. The complete file is in [Configuration file samples](./index.md#configuration-file-samples).
+Pointer to the Service Provider metadata file. Put it in `$CATALINA_BASE/conf`. The default name is `sp-metadata.xml`. The complete file is in [Configuration file samples](./index.md#configuration-file-samples). An absolute path, or a path relative to `$CATALINA_BASE`, also works.
 
 `entityID` (sometimes called **Relying Party**) is the name of **your** application that must be registered with the Identity Provider.
 
@@ -84,7 +86,7 @@ The attribute is **empty** by default.
 The role mapping attribute is **mandatory** if `roleAttribute` is set, it must point to a **property** file. The property file is used to dynamically **map the role** names provided by the **identity provider** to local roles names.  
 This could be useful to map **identity provider** roles to your **Identity Analytics** application roles (such as `igrc-administrator` for instance).  
 
-The file has to be located in the Tomcat `/conf/` subdirectory. A sample is in [Configuration file samples](./index.md#configuration-file-samples).  
+Put the file in `$CATALINA_BASE/conf`. A sample is in [Configuration file samples](./index.md#configuration-file-samples). An absolute path, or a path relative to `$CATALINA_BASE`, also works.  
 
 This file is reloaded automatically every 10 minutes.  
 
@@ -93,7 +95,7 @@ This file is reloaded automatically every 10 minutes.
 The static role attribute is **mandatory**, it must point to a **property** file. The property file is used to declare the users roles.  
 The content is in the form `login=roles` where roles is in the form `role1,role2,role3`.  
 
-The file has to be located in the `/conf/` subdirectory. A sample is in [Configuration file samples](./index.md#configuration-file-samples).  
+Put the file in `$CATALINA_BASE/conf`. A sample is in [Configuration file samples](./index.md#configuration-file-samples). An absolute path, or a path relative to `$CATALINA_BASE`, also works.  
 
 This file is reloaded automatically every 10 minutes.  
 
@@ -135,7 +137,7 @@ Available since **2.1**, and still available in 3.x, 4.x and 5.x.
 
 Available since **3.3.7**, and in **4.x** and **5.x**. They identify the keystore used to sign authentication requests. They are required when `AuthnRequestsSigned` is true in the SP metadata, or when `WantAuthnRequestsSigned` is true in the IdP metadata.
 
-The keystore password and the private key password must be identical. `privateKeystoreFormat` is `PKCS12` for a `.p12` file.
+The keystore password and the private key password must be identical. `privateKeystoreFormat` is `PKCS12` for a `.p12` file. Put the keystore in `$CATALINA_BASE/conf`, or give `privateKeystore` an absolute path or a path relative to `$CATALINA_BASE`. The keystore file must be readable by the account that runs Tomcat and must not be readable by other accounts. On Linux, mode `600` or `640`. On Windows, an ACL limited to the Tomcat service account.
 
 ## sigAlgo
 

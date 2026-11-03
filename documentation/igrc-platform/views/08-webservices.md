@@ -418,11 +418,11 @@ Then:
 ```
 
 By doing so, the SSO valve will be actived by default whatever the web application. You can restrict its activation to a subset of URLs by using the urlPattern parameter (standard regex).  
-The SSO valve points to a XML configuration file which is located in /conf/sso.xml. It can be edited on the fly (the valve configuration is updated every "5" seconds if needed in the upper example)
+The SSO valve points to an XML configuration file. Put it in `$CATALINA_BASE/conf/sso.xml`. From **3.4.0**, **4.1.0** and **5.1.0**, a bare `config` such as `sso.xml` is read from that directory. An absolute path, or a path relative to `$CATALINA_BASE`, also works. It can be edited on the fly (the valve configuration is updated every "5" seconds if needed in the upper example).
 
-- Create a `/conf/sso.xml` file
+- Create `$CATALINA_BASE/conf/sso.xml`
 
-The `/conf/sso.xml` file will contain a series of SSO tokens and their users configurations. Here is an example:
+`$CATALINA_BASE/conf/sso.xml` contains the SSO tokens and their user configuration. Here is an example:
 
 ```xml
 <tokens>
