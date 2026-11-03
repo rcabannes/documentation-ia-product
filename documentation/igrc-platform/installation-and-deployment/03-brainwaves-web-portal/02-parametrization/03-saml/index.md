@@ -155,6 +155,8 @@ From **3.4.0**, **4.1.0** and **5.1.0**, a bare file name in that properties fil
 
 `SAMLAuthenticator.properties` applies to every web application. Since **3.3.10**, and on **4.x** and **5.x**, a web application can use its own file instead: `SAMLAuthenticator-<context-name>.properties`, where `<context-name>` is the context name. That file can point to its own `sp-metadata.xml`. When the context file is absent, `SAMLAuthenticator.properties` is used.
 
+The samples on this page do not sign authentication requests. To sign them, follow [Sign authentication requests](#sign-authentication-requests).
+
 ### Step 3: Identity Analytics Portal generation
 
 In your Studio, navigate to the `Export` tab for your project's **technical configuration**:
@@ -191,6 +193,92 @@ Once your `<WEBAPP_NAME>` webapp is generated, the last step is to:
 
 The portal should be accessible from your browser using `<WEBAPP_URL>/<WEBAPP_URI>`.
 
+## Sign authentication requests
+
+Since **3.3.7**, and on **4.x** and **5.x**, the service provider can sign the SAML authentication request it sends to the identity provider. Signing is optional. Leave it disabled when the identity provider accepts unsigned requests. The samples below keep `AuthnRequestsSigned="false"` and `WantAuthnRequestsSigned="false"`.
+
+Enable signing when the identity provider requires a signed authentication request, or when the service provider metadata declares that its requests are signed.
+
+Property names and the versions in which they appeared are in [SAML Authenticator properties](./saml-authenticators-properties).
+
+### 1. Turn signing on in the metadata
+
+The authenticator signs when either attribute is `true`.
+
+In `sp-metadata.xml`, on `SPSSODescriptor`:
+
+```xml
+<md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+```
+
+In `idp-metadata.xml`, on `IDPSSODescriptor`:
+
+```xml
+<md:IDPSSODescriptor WantAuthnRequestsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+```
+
+The identity provider usually supplies `idp-metadata.xml`. Set `WantAuthnRequestsSigned` there only when that file is maintained locally. `AuthnRequestsSigned` on the service provider metadata is enough to make this service provider sign.
+
+### 2. Create the key pair
+
+In `<TOMCAT_CONF_FOLDER>` (`$CATALINA_BASE/conf`), run:
+
+```sh
+keytool -genkeypair -validity 3000 -keyalg RSA -alias privatekey -keypass changeit -storepass changeit -storetype PKCS12 -keystore samlkeystore.p12
+```
+
+- The alias is `privatekey`. `privateKeyAlias` must use that same value.
+- The keystore password and the private key password must be identical. In this example both are `changeit`.
+- `-storetype PKCS12` matches `privateKeystoreFormat=PKCS12`.
+- Answer the certificate questions, or leave them empty.
+- `keytool -genkeypair` stores a self-signed certificate in the keystore together with the private key. Keep that certificate in the entry. From **4.0.2**, **4.1.0**, **5.0.2** and **5.1.0**, the authenticator reads it from the keystore when it signs. Copying it into `sp-metadata.xml` does not remove it from the keystore.
+- In **4.0.0**, **4.0.1**, **5.0.0** and **5.0.1**, a signed authentication request failed before the identity provider was called (HTTP 500 on HTTP-POST, HTTP 403 on HTTP-Redirect). Use 4.0.2 or later on Tomcat 9, or 5.0.2 or later on Tomcat 11. The 3.x line is not affected.
+- The keystore file must be readable by the account that runs Tomcat and must not be readable by other accounts. On Linux, mode `600` or `640`. On Windows, an ACL limited to the Tomcat service account.
+- From **3.4.0**, **4.1.0** and **5.1.0**, `privateKeystore=samlkeystore.p12` is read from `$CATALINA_BASE/conf`. An absolute path, or a path relative to `$CATALINA_BASE`, also works.
+
+### 3. Publish the certificate in the service provider metadata
+
+Export the certificate:
+
+```sh
+keytool -exportcert -rfc -keystore samlkeystore.p12 -storepass changeit -alias privatekey -file samlcert.pem
+```
+
+Open `samlcert.pem` and copy the Base64 block between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`. Do not copy those two lines.
+
+In `sp-metadata.xml`, add a `KeyDescriptor` inside `SPSSODescriptor` and replace the placeholder with that Base64 block. The identity provider trusts this certificate.
+
+```xml
+<md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+        <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+            <ds:X509Data>
+                <ds:X509Certificate>REPLACE_WITH_THE_BASE64_CERTIFICATE</ds:X509Certificate>
+            </ds:X509Data>
+        </ds:KeyInfo>
+    </md:KeyDescriptor>
+</md:SPSSODescriptor>
+```
+
+Give this updated `sp-metadata.xml` to the identity provider when it registers the application.
+
+### 4. Declare the keystore
+
+Add these properties to `SAMLAuthenticator.properties`. They are read only when signing is enabled.
+
+```properties
+privateKeystore=samlkeystore.p12
+privateKeystorePass=changeit
+privateKeyAlias=privatekey
+privateKeyPass=changeit
+privateKeystoreFormat=PKCS12
+sigAlgo=rsa-sha256
+```
+
+`sigAlgo` is optional. When it is omitted, **4.x** and **5.x** sign with `rsa-sha256`. SHA-1 is rejected on those lines. On 3.3.8 through 3.3.10, the default is `rsa-sha1`.
+
+Restart Tomcat.
+
 ## Debug
 
 To activate traces, add the following line at the end of the `/conf/logging.properties`. Do **not** use this in **production**. This is just for troubleshooting `SAML` request/response.
@@ -224,17 +312,12 @@ forceURI=/sandbox/portal
 # Available since 2.1, and still available in 3.x, 4.x and 5.x.
 # userAttributeIdentifier=
 
-# Keystore used to sign authentication requests. Available since 3.3.7, and in 4.x and 5.x.
-# Required when AuthnRequestsSigned or WantAuthnRequestsSigned is true.
+# Uncomment to sign authentication requests. See "Sign authentication requests" above.
 # privateKeystore=samlkeystore.p12
 # privateKeystorePass=changeit
 # privateKeyAlias=privatekey
 # privateKeyPass=changeit
 # privateKeystoreFormat=PKCS12
-
-# Signature algorithm. Available since 3.3.8.
-# On 3.3.8 through 3.3.10 the default is rsa-sha1.
-# On 4.x and 5.x the default is rsa-sha256, and SHA-1 is rejected.
 # sigAlgo=rsa-sha256
 ```
 

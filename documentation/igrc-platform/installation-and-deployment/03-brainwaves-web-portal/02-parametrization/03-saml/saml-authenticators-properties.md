@@ -135,9 +135,13 @@ Available since **2.1**, and still available in 3.x, 4.x and 5.x.
 
 ## privateKeystore, privateKeystorePass, privateKeyAlias, privateKeyPass, privateKeystoreFormat
 
-Available since **3.3.7**, and in **4.x** and **5.x**. They identify the keystore used to sign authentication requests. They are required when `AuthnRequestsSigned` is true in the SP metadata, or when `WantAuthnRequestsSigned` is true in the IdP metadata.
+Available since **3.3.7**, and in **4.x** and **5.x**. They identify the keystore used to sign authentication requests. They are required when `AuthnRequestsSigned` is true in the SP metadata, or when `WantAuthnRequestsSigned` is true in the IdP metadata. The procedure, including the `keytool` commands and the certificate to publish in `sp-metadata.xml`, is in [Sign authentication requests](./index.md#sign-authentication-requests) on the SAML Access page.
 
 The keystore password and the private key password must be identical. `privateKeystoreFormat` is `PKCS12` for a `.p12` file. Put the keystore in `$CATALINA_BASE/conf`, or give `privateKeystore` an absolute path or a path relative to `$CATALINA_BASE`. The keystore file must be readable by the account that runs Tomcat and must not be readable by other accounts. On Linux, mode `600` or `640`. On Windows, an ACL limited to the Tomcat service account.
+
+The examples use the alias `privatekey`. `privateKeyAlias` must use that same value. `keytool -genkeypair` stores a self-signed certificate with the private key. Keep that certificate in the keystore entry.
+
+> **Note:** Fixed in **4.0.2**, **4.1.0**, **5.0.2** and **5.1.0**. In 4.0.0, 4.0.1, 5.0.0 and 5.0.1, a signed authentication request failed before the IdP was called (HTTP 500 on HTTP-POST, HTTP 403 on HTTP-Redirect) because the signing credential had no public key. The fixed versions sign with the X.509 certificate stored in the keystore next to the private key. An entry that contains only a private key cannot sign. Unsigned configurations are unchanged. The 3.x line is not affected.
 
 ## sigAlgo
 
