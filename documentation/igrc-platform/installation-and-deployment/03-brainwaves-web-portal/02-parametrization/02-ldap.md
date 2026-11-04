@@ -159,7 +159,9 @@ Within the <TOMCAT_CONF_FOLDER>/server.xml file, define a JNDI Realm and a RoleM
 
 > All configuration values should already have been retrieved during the `LDAP information retrieving` section.  
 
-> The **JNDIRealm** must be included within the **RoleMappingRealm**, which in turn must be included within the **LockoutRealm**.  
+> The **JNDIRealm** must be included within the **RoleMappingRealm**, which in turn must be included within the **LockoutRealm**.
+
+`reloadPeriod` is a number of seconds. `0` reads the mapping file when Tomcat starts and does not read it again until the next restart. A positive value checks the file every that many seconds and reloads it when the content has changed. `reloadPeriod="10"` checks every 10 seconds.
 
 After completing the realm configurations, the next step is to create the role mapping file:
 
@@ -175,6 +177,14 @@ After completing the realm configurations, the next step is to create the role m
     ```
 
     The key is the Identity Analytics portal role. The value is the LDAP group returned by the role search (`cn` in the example below). Separate several groups for the same portal role with a comma: `user=BW_Users,BW_Contractors`.
+
+    A value accepts three wildcards:
+
+    - `*` as a whole value grants that portal role to every authenticated user: `user=*`. It has that meaning only when the value is exactly `*`. A group name that contains `*` is compared as that exact name.
+    - `%` matches any sequence of characters. `BW%` matches a name that starts with `BW`, `%Admin` a name that ends with `Admin`, and `%Contract%` a name that contains `Contract`.
+    - `?` matches one character. `A1??` matches `A100` and `AB101`.
+
+    Wildcards can be mixed with exact group names: `user=BW_Users,BW%`.
 
 From **3.4.0**, **4.1.0** and **5.1.0**, a bare `configurationFile` is read from `$CATALINA_BASE/conf`. An absolute path is used as given. Any other relative path is resolved from `$CATALINA_BASE` and is not prefixed with `conf/` a second time. A value that contains a directory, such as `subdir/roles.properties`, is `$CATALINA_BASE/subdir/roles.properties`.
 
@@ -262,7 +272,7 @@ After completing the realm configurations, the next step is to create the role m
     <PORTAL_ROLEn>=<LDAP_GROUPn>
     ```
 
-    The key is the Identity Analytics portal role. The value is the LDAP group. Separate several groups for the same portal role with a comma.
+    The key is the Identity Analytics portal role. The value is the LDAP group. Separate several groups for the same portal role with a comma. The wildcards `*`, `%` and `?` are the same as for a single LDAP. `reloadPeriod` is a number of seconds, as for a single LDAP.
 
 You can create as many mapping files as required by your realms.
 
@@ -313,7 +323,10 @@ com.brainwave.tomcat.realm.RoleMappingRealm.useParentHandlers=true
 ### Role mapping
 
 ```properties
-user = BW_Users
+user = BW_Users,BW%
 technicaladmin = BW_Managers
+auditor = *
 ```
+
+`BW%` matches every LDAP group whose name starts with `BW`. `auditor=*` grants the `auditor` portal role to every authenticated user. `reloadPeriod="10"` on the realm above checks this file every 10 seconds.
 

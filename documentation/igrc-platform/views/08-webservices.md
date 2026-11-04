@@ -414,10 +414,14 @@ Then:
 <Valve className="com.brainwave.tomcat.valve.PassthroughAuthenticationValve"
   config="sso.xml"
   refreshRate="5"
-  urlPattern="^/[a-z,A-Z,0-9,_,-]+/ws/.*$" />
+  urlPattern="^/[a-z,A-Z,0-9,_,-]+/ws/.*$"
+  exclusiveAuthOnUrlMatch="false" />
 ```
 
-By doing so, the SSO valve will be actived by default whatever the web application. You can restrict its activation to a subset of URLs by using the urlPattern parameter (standard regex).  
+By doing so, the SSO valve will be actived by default whatever the web application. You can restrict its activation to a subset of URLs by using the urlPattern parameter (standard regex).
+
+`exclusiveAuthOnUrlMatch` applies only when `urlPattern` is set and the request URL matches it. The default is `false`. When authentication fails (no `ssokey` or `_ssokey`, unknown token, or source IP outside `IPpattern`), `false` logs a warning and continues with the next valves. `true` stops the valve chain and returns HTTP 403. A request that does not match `urlPattern` is ignored and the next valves still run. Without `urlPattern`, the flag does not return 403.
+
 The SSO valve points to an XML configuration file. Put it in `$CATALINA_BASE/conf/sso.xml`. From **3.4.0**, **4.1.0** and **5.1.0**, a bare `config` such as `sso.xml` is read from that directory. An absolute path, or a path relative to `$CATALINA_BASE`, also works. It can be edited on the fly (the valve configuration is updated every "5" seconds if needed in the upper example).
 
 - Create `$CATALINA_BASE/conf/sso.xml`
@@ -437,6 +441,26 @@ This means that every time the "HsCnykb8RtMdGpKlu7W7SlJs" token will be presente
 > [!warning] By default the login defined in the files `sso.xml` must correspond to a reconciled account as the default view used to log into the portal is `br_portalidentity`.
 
 In order to use your token you can either add an "ssokey" custom HTTP request header with the token value or add an `_ssokey` URL parameter with the token value. Authentication will be done on the fly. Note that custom HTTP header is the preferred method as URL parameters are most of the time stored in HTTP access logs, this can lead to security issues.
+
+`digestAlgorithm` stores a digest of the token in `sso.xml` instead of the clear value. The caller still sends the clear token in `ssokey` or `_ssokey`. The valve hashes that value with the named Java algorithm (UTF-8, no salt) and looks up the lowercase hexadecimal digest. Example: `digestAlgorithm="SHA-256"`. When the attribute is omitted, the token id is the clear token. An unknown algorithm name is logged and ignored, and clear tokens are used.
+
+Compute the digest with Tomcat's `digest` command. `-s 0` is required: a salted hash is not accepted. On Linux, from `$CATALINA_HOME/bin`:
+
+```sh
+./digest.sh -a SHA-256 -s 0 "<clear token>"
+```
+
+On Windows, `digest.bat` takes the same arguments. The command prints `<clear token>:<hexadecimal digest>`. Store only the hexadecimal part as the token `id`:
+
+```xml
+<tokens>
+    <token id="2c62feca79d1878118bcaf231eb3e03a8f4efe98ecb70d17b04169e6d8e79c8e" login="ABOURGET18" IPpattern="^.*$">
+        <role>user</role>
+    </token>
+</tokens>
+```
+
+That digest is SHA-256 of `HsCnykb8RtMdGpKlu7W7SlJs`. The request still sends the clear token `HsCnykb8RtMdGpKlu7W7SlJs`.
 
 Here is an example of an URL:  
 `http://localhost:9090/PortalReports/ws/results/br_identity?_ssokey=HsCnykb8RtMdGpKlu7W7SlJs`
