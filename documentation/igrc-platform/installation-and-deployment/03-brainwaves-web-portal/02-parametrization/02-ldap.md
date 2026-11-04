@@ -168,11 +168,13 @@ After completing the realm configurations, the next step is to create the role m
   - Populate it based on your context, using the format shown below:
 
     ```properties
-    <LDAP_ROLE1>=<PORTAL_ROLE1>
-    <LDAP_ROLE2>=<PORTAL_ROLE2>
+    <PORTAL_ROLE1>=<LDAP_GROUP1>
+    <PORTAL_ROLE2>=<LDAP_GROUP2>
     ...
-    <LDAP_ROLEn>=<PORTAL_ROLEn>
+    <PORTAL_ROLEn>=<LDAP_GROUPn>
     ```
+
+    The key is the Identity Analytics portal role. The value is the LDAP group returned by the role search (`cn` in the example below). Separate several groups for the same portal role with a comma: `user=BW_Users,BW_Contractors`.
 
 From **3.4.0**, **4.1.0** and **5.1.0**, a bare `configurationFile` is read from `$CATALINA_BASE/conf`. An absolute path is used as given. Any other relative path is resolved from `$CATALINA_BASE` and is not prefixed with `conf/` a second time. A value that contains a directory, such as `subdir/roles.properties`, is `$CATALINA_BASE/subdir/roles.properties`.
 
@@ -186,69 +188,66 @@ In <TOMCAT_CONF_FOLDER>/server.xml, define as many JNDI and RoleMapping Realms a
 <!-- Use the LockOutRealm to prevent attempts to guess user passwords via a brute-force attack -->
 <Realm className="org.apache.catalina.realm.LockOutRealm">
   ...
-  <Realm ClassName="org.apache.catalina.realm.CombinedRealm">
-    <!-- First JNDI Realm for first LDAP directory -->
-    <Realm
-      className="org.apache.catalina.realm.JNDIRealm"
-      connectionURL="<LDAP URL>"
-      connectionName="<Technical account>"
-      connectionPassword="<Technical account password>"
-      authentication="simple"
-      referrals="follow"
-      adCompat="true"
+  <Realm className="org.apache.catalina.realm.CombinedRealm">
+    <!-- First LDAP directory -->
+    <Realm className="com.brainwave.tomcat.realm.RoleMappingRealm" reloadPeriod="0" configurationFile="<LDAP_ROLE_MAPPING_FILE_1>">
+      <Realm
+        className="org.apache.catalina.realm.JNDIRealm"
+        connectionURL="<LDAP URL>"
+        connectionName="<Technical account>"
+        connectionPassword="<Technical account password>"
+        authentication="simple"
+        referrals="follow"
+        adCompat="true"
 
-      userBase="<User base>"
-      userSearch="<User search>"
+        userBase="<User base>"
+        userSearch="<User search>"
 
-      userSubtree="<User sub tree>"
-      roleBase="<Role base>"
-      roleName="<Role name>"
-      roleSubtree="<Role sub tree>"
-      roleNested="<Role nested>"
-      roleSearch="<Role search>"
-    />
-    <!-- Second JNDI Realm for second LDAP directory -->
-    <Realm
-      className="org.apache.catalina.realm.JNDIRealm"
-      connectionURL="<LDAP URL>"
-      connectionName="<Technical account>"
-      connectionPassword="<Technical account password>"
-      authentication="simple"
-      referrals="follow"
-      adCompat="true"
+        userSubtree="<User sub tree>"
+        roleBase="<Role base>"
+        roleName="<Role name>"
+        roleSubtree="<Role sub tree>"
+        roleNested="<Role nested>"
+        roleSearch="<Role search>"
+      />
+    </Realm>
+    <!-- Second LDAP directory -->
+    <Realm className="com.brainwave.tomcat.realm.RoleMappingRealm" reloadPeriod="0" configurationFile="<LDAP_ROLE_MAPPING_FILE_2>">
+      <Realm
+        className="org.apache.catalina.realm.JNDIRealm"
+        connectionURL="<LDAP URL>"
+        connectionName="<Technical account>"
+        connectionPassword="<Technical account password>"
+        authentication="simple"
+        referrals="follow"
+        adCompat="true"
 
-      userBase="<User base>"
-      userSearch="<User search>"
+        userBase="<User base>"
+        userSearch="<User search>"
 
-      userSubtree="<User sub tree>"
-      roleBase="<Role base>"
-      roleName="<Role name>"
-      roleSubtree="<Role sub tree>"
-      roleNested="<Role nested>"
-      roleSearch="<Role search>"
-    />
+        userSubtree="<User sub tree>"
+        roleBase="<Role base>"
+        roleName="<Role name>"
+        roleSubtree="<Role sub tree>"
+        roleNested="<Role nested>"
+        roleSearch="<Role search>"
+      />
+    </Realm>
     ...
-    <!-- Nth JNDI Realm for nth LDAP directory -->
-    <Realm
-      ClassName="org.apache.catalina.realm.JNDIRealm"
-      ...
-    />
-  </Realm>
-
-  <!-- First Role mapping configuration -->
-  <Realm className="com.brainwave.tomcat.realm.RoleMappingRealm" reloadPeriod="0" configurationFile="<LDAP_ROLE_MAPPING_FILE>_1">
-  <!-- Second Role mapping configuration -->
-  <Realm className="com.brainwave.tomcat.realm.RoleMappingRealm" reloadPeriod="0" configurationFile="<LDAP_ROLE_MAPPING_FILE_2>">
-  ...
-  <!-- Nth Role mapping configuration -->
-  <Realm className="com.brainwave.tomcat.realm.RoleMappingRealm" reloadPeriod="0" configurationFile="<LDAP_ROLE_MAPPING_FILE_N>">
+    <!-- Nth LDAP directory -->
+    <Realm className="com.brainwave.tomcat.realm.RoleMappingRealm" reloadPeriod="0" configurationFile="<LDAP_ROLE_MAPPING_FILE_N>">
+      <Realm
+        className="org.apache.catalina.realm.JNDIRealm"
+        ...
+      />
+    </Realm>
   </Realm>
   ...
 <!-- End of LockOutRealm section -->
 </Realm>
 ```
 
-> The **JNDIRealm** must be included within the **CombinedRealm**, which in turn must be included within the **LockoutRealm**. If **RoleMappingRealm** is used, declare those realms outside of the **CombinedRealm**.
+> Each **JNDIRealm** must be included within its own **RoleMappingRealm**. Those **RoleMappingRealm** elements must be included within the **CombinedRealm**, which in turn must be included within the **LockOutRealm**.
 
 After completing the realm configurations, the next step is to create the role mapping file. Use the same location rule as the single LDAP mapping file: `$CATALINA_BASE/conf` for a bare name.
 
@@ -257,11 +256,13 @@ After completing the realm configurations, the next step is to create the role m
   - Populate it based on your context, using the format shown below:
 
     ```properties
-    <LDAP_ROLE1>=<PORTAL_ROLE1>
-    <LDAP_ROLE2>=<PORTAL_ROLE2>
+    <PORTAL_ROLE1>=<LDAP_GROUP1>
+    <PORTAL_ROLE2>=<LDAP_GROUP2>
     ...
-    <LDAP_ROLEn>=<PORTAL_ROLEn>
+    <PORTAL_ROLEn>=<LDAP_GROUPn>
     ```
+
+    The key is the Identity Analytics portal role. The value is the LDAP group. Separate several groups for the same portal role with a comma.
 
 You can create as many mapping files as required by your realms.
 
@@ -274,10 +275,11 @@ To debug the authentication settings, append the following lines to the end of y
 ```properties
 # Authentication Realm debug
 org.apache.catalina.realm.level = ALL
-org.apache.catalina.realm.userParentHandlers=true
+org.apache.catalina.realm.useParentHandlers=true
 org.apache.catalina.authenticator.level=ALL
-org.apache.catalina.authenticator.userParentHandlers=true
+org.apache.catalina.authenticator.useParentHandlers=true
 com.brainwave.tomcat.realm.RoleMappingRealm.level = ALL
+com.brainwave.tomcat.realm.RoleMappingRealm.useParentHandlers=true
 ```
 
 ## Examples
